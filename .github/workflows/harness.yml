@@ -1,0 +1,26 @@
+name: Harness
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    name: Check harness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check shell scripts
+        shell: bash
+        run: |
+          bash -n scripts/check-harness.sh
+          bash -n scripts/sync-agent-skills.sh
+          python3 -m py_compile scripts/render-agent-mirrors.py
+
+      - name: Check harness structure
+        shell: bash
+        run: ./scripts/check-harness.sh

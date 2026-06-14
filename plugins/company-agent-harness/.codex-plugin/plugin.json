@@ -1,0 +1,14 @@
+{
+  "name": "company-agent-harness",
+  "version": "0.1.0",
+  "description": "Company reusable agent harness skills for Codex.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Company Agent Harness",
+    "shortDescription": "Reusable company workflows for coding agents.",
+    "longDescription": "Company workflow skills for starter setup, brainstorming, planning, TDD, debugging, subagent execution, code review, verification, and branch completion.",
+    "developerName": "Your Company",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"]
+  }
+}

@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+CLAUDE.local.md
+.claude/settings.local.json
+
+node_modules/
+dist/
+build/
+coverage/
+
+*.log
