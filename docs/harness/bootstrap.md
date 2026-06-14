@@ -12,7 +12,7 @@
 6. agent가 `./scripts/check-harness.sh`를 다시 실행해 남은 warning을 보고한다.
 7. 필요하면 새 repository에서 `git init`을 실행하고 첫 커밋을 만든다.
 
-`starter` 스킬은 이 절차를 agent가 실행하기 위한 첫 실행 workflow다. README와 repository files를 읽고 안전한 초기 파일 수정을 진행하며, 프로젝트 이름, 제품 설명, stack, 명령어처럼 repository에서 확인할 수 없는 정보만 사용자에게 묻는다.
+`starter` 스킬은 이 절차를 agent가 실행하기 위한 첫 실행 workflow다. README와 repository files를 읽고 현재 상태를 점검한 뒤, 프로젝트 의도와 운영 계약을 확정하기 위한 질문을 하나씩 던진다. 사용자의 답변으로 결정된 내용은 안전한 초기 파일 수정으로 반영하고, 프로젝트 이름, 제품 설명, stack, 명령어처럼 repository에서 확인할 수 없는 정보는 추천안과 함께 사용자에게 확인한다.
 
 ## Manual path
 

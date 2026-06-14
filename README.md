@@ -53,7 +53,7 @@ Codex는 `.agents/skills/`를 repo-scoped skills로 바로 읽습니다. 여러 
 
 Claude Code에서는 `CLAUDE.md`가 `AGENTS.md`를 import하고, `.claude/skills/` 아래 skill이 `/skill-name`으로 노출됩니다. `.claude/agents/` 아래 subagent는 `/agents`에서 확인할 수 있습니다.
 
-`starter` 스킬은 agent-assisted path를 실행할 때 쓰는 runbook입니다. agent가 안전한 범위의 파일 수정을 진행하며, repository에서 추론할 수 없는 제품 정보만 사용자에게 확인합니다.
+`starter` 스킬은 agent-assisted path를 실행할 때 쓰는 대화형 runbook입니다. agent가 repository를 먼저 점검한 뒤 프로젝트 의도, 사용자, 핵심 workflow, stack, commands처럼 필요한 결정을 한 번에 쏟아내지 않고 하나씩 질문합니다. 답변이 확정될 때마다 안전한 범위의 파일 수정을 진행하고, repository에서 추론할 수 없는 정보는 추천안과 함께 사용자에게 확인합니다.
 
 ## 설계 원칙
 
