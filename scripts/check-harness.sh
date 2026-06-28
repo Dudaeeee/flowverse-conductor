@@ -260,6 +260,8 @@ fi
 if command -v rg >/dev/null 2>&1; then
   if rg -q --hidden 'Flowverse|flowverse-conductor|Your Company' \
     --glob '!**/.git/**' \
+    --glob '!MIGRATE_EXISTING_CODEBASE.md' \
+    --glob '!**/MIGRATE_EXISTING_CODEBASE.md' \
     --glob '!**/docs/harness/rename-checklist.md' \
     --glob '!**/scripts/check-harness.sh' \
     "$ROOT"; then

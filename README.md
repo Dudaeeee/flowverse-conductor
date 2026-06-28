@@ -2,6 +2,46 @@
 
 이 저장소는 새 프로젝트를 시작할 때 파일을 다운로드하거나 복사해서 쓰는 회사 공통 agent harness starter입니다. 목표는 Codex와 Claude Code가 같은 프로젝트 규칙, 같은 작업 절차, 같은 재사용 skill을 읽도록 만드는 것입니다.
 
+## 처음 적용하는 법
+
+Flowverse Conductor를 새 repository나 기존 application repository에 처음 적용할 때는 `MIGRATE_EXISTING_CODEBASE.md`를 Codex나 Claude Code에 먼저 제공합니다. 이 파일은 repo-local skill이 설치되기 전에도 동작하는 수동 bootstrap runbook입니다.
+
+대상 repository에서 Codex나 Claude Code를 열고 `MIGRATE_EXISTING_CODEBASE.md`의 전체 내용과 아래 지시를 함께 전달합니다.
+
+```text
+Install the Flowverse Conductor agent harness into the current repository using this runbook.
+Use https://github.com/Dudaeeee/flowverse-conductor.git as the source harness.
+If this repository is empty or brand new, install the harness directly.
+If this repository already has source code or project docs, preserve existing files and migrate safely.
+```
+
+agent는 먼저 대상 repository를 점검한 뒤 두 가지 mode 중 하나로 진행합니다.
+
+- Fresh target mode: 비어 있거나 아직 의미 있는 application source가 없는 repository입니다. source harness를 직접 설치하되 source `.git` history와 local-only artifact는 가져오지 않습니다.
+- Existing-codebase mode: 이미 source code, package manifest, docs, CI, deployment config, database file, agent instruction이 있는 repository입니다. 기존 파일을 덮어쓰지 않고 충돌 파일을 merge 대상으로 분류한 뒤, 기존 코드 분석 결과를 harness 문서에 반영합니다.
+
+설치가 끝나면 agent는 `starter` skill을 사용해 `docs/harness/project-profile.md`, `CONTEXT.md`, `AGENTS.md`를 프로젝트에 맞게 채웁니다. 아직 확정되지 않은 제품 의도, stack, command, deployment 정책은 추정하지 않고 사용자에게 질문하거나 "not chosen yet"으로 기록합니다.
+
+Codex는 `.agents/skills/`를 repo-scoped skills로 읽습니다. Claude Code에서는 `CLAUDE.md`가 `AGENTS.md`를 import하고, `.claude/skills/` 아래 skill이 `/skill-name`으로 노출됩니다.
+
+수동으로 적용해야 한다면 아래 순서로 진행합니다.
+
+1. `./scripts/check-harness.sh`를 실행해 구조와 미작성 항목을 확인합니다.
+2. `docs/harness/rename-checklist.md`를 보고 starter 이름과 placeholder를 프로젝트 이름으로 바꿉니다.
+3. `docs/harness/project-profile.md`를 실제 제품, stack, command, 환경, 제약에 맞게 채웁니다.
+4. `CONTEXT.md`를 프로젝트 domain glossary로 갱신합니다.
+5. `AGENTS.md`를 실제 repository 규칙과 검증 명령에 맞게 조정합니다.
+6. skill이나 agent를 수정했으면 `./scripts/sync-agent-skills.sh`를 실행합니다.
+7. `./scripts/check-harness.sh`를 다시 실행합니다.
+
+마지막으로 agent가 가능한 검증을 실행하게 합니다.
+
+```bash
+./scripts/check-harness.sh
+```
+
+대상 프로젝트의 install, lint, typecheck, test, build command가 확인되었고 실행해도 안전하다면 함께 검증합니다. 실행하지 못한 검증은 이유를 보고해야 합니다.
+
 ## 구성
 
 - `AGENTS.md`: Codex와 다른 agent가 읽는 canonical 프로젝트 지침입니다.
@@ -27,33 +67,6 @@
 Codex repo skill mirror, Codex plugin adapter, Codex custom agent mirror, Claude Code skill mirror, Claude Code agent mirror는 실제 파일로 포함합니다. 그래서 file bootstrap 직후 각 도구가 harness를 바로 읽을 수 있습니다.
 First-class adapter는 Codex와 Claude Code만 지원합니다. 다른 도구는 공통 문서와 `AGENTS.md`를 통한 best-effort 사용 범위에 둡니다.
 이 template source repository는 GitHub에 올라가는 것을 전제로 합니다. 기본 CI는 GitHub Actions로 제공합니다.
-
-## 새 프로젝트에서 쓰는 법
-
-### Agent-assisted path
-
-1. GitHub에서 `Download ZIP`을 받거나 release archive를 내려받아 새 repository의 초기 파일로 풀어 넣습니다.
-2. 새 project repository directory에서 Codex나 Claude Code를 엽니다.
-3. `starter` 스킬을 요청합니다.
-4. agent가 README와 repository files를 읽고 `./scripts/check-harness.sh`, rename checklist, project profile, `CONTEXT.md`, `AGENTS.md`를 순서대로 처리하게 합니다.
-5. agent가 보고한 남은 warning이나 결정사항을 확인합니다.
-6. 필요하면 `git init`을 실행하고 첫 커밋을 만듭니다.
-
-### Manual path
-
-1. `./scripts/check-harness.sh`를 실행해 구조와 미작성 항목을 확인합니다.
-2. `docs/harness/rename-checklist.md`를 보고 starter 이름과 placeholder를 프로젝트 이름으로 바꿉니다.
-3. agent 운영 계약인 `docs/harness/project-profile.md`의 빈 항목을 채웁니다.
-4. `CONTEXT.md`를 새 프로젝트의 domain glossary로 갱신합니다.
-5. `AGENTS.md`의 repository-specific section을 실제 stack과 명령어에 맞게 조정합니다.
-6. skill이나 agent를 수정했으면 `./scripts/sync-agent-skills.sh`를 실행합니다.
-7. `./scripts/check-harness.sh`를 다시 실행합니다.
-
-Codex는 `.agents/skills/`를 repo-scoped skills로 바로 읽습니다. 여러 프로젝트에 배포하려면 repo marketplace를 등록하고 `company-agent-harness` plugin을 설치할 수 있습니다.
-
-Claude Code에서는 `CLAUDE.md`가 `AGENTS.md`를 import하고, `.claude/skills/` 아래 skill이 `/skill-name`으로 노출됩니다. `.claude/agents/` 아래 subagent는 `/agents`에서 확인할 수 있습니다.
-
-`starter` 스킬은 agent-assisted path를 실행할 때 쓰는 대화형 runbook입니다. agent가 repository를 먼저 점검한 뒤 프로젝트 의도, 사용자, 핵심 workflow, stack, commands처럼 필요한 결정을 한 번에 쏟아내지 않고 하나씩 질문합니다. 답변이 확정될 때마다 안전한 범위의 파일 수정을 진행하고, repository에서 추론할 수 없는 정보는 추천안과 함께 사용자에게 확인합니다.
 
 ## 설계 원칙
 

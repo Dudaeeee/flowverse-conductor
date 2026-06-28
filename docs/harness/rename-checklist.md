@@ -29,6 +29,8 @@
 ```bash
 rg -n --hidden "Flowverse|flowverse-conductor|Your Company" \
   --glob '!**/.git/**' \
+  --glob '!MIGRATE_EXISTING_CODEBASE.md' \
+  --glob '!**/MIGRATE_EXISTING_CODEBASE.md' \
   --glob '!**/docs/harness/rename-checklist.md' \
   --glob '!**/scripts/check-harness.sh' \
   .
