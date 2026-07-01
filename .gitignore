@@ -12,3 +12,12 @@ build/
 coverage/
 
 *.log
+
+# Eval run artifacts and non-public suites belong outside committed template data.
+evals/private/
+evals/private-suite/
+evals/runs/
+runs/
+.harness-weekly-history/
+.harness-eval-dashboard-site/
+harness-eval-runner-summary.html

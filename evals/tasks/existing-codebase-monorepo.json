@@ -1,0 +1,75 @@
+{
+  "id": "existing-codebase-monorepo",
+  "version": 1,
+  "category": "existing_codebase_migration",
+  "fixture": "fixtures/existing-monorepo",
+  "prompt": "Install the Flowverse Conductor agent harness into the existing Orbit Ops monorepo. Preserve the web and API service files, record the monorepo shape in the project profile instead of flattening it, run the harness doctor, and report evidence.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.88
+  },
+  "checks": [
+    {
+      "id": "readme_preserved",
+      "type": "file_contains",
+      "path": "README.md",
+      "pattern": "Orbit Ops[\\s\\S]*monorepo",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "web_package_preserved",
+      "type": "file_contains",
+      "path": "apps/web/package.json",
+      "pattern": "@orbit/web",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "api_project_preserved",
+      "type": "file_contains",
+      "path": "services/api/pyproject.toml",
+      "pattern": "orbit-api",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "profile_mentions_monorepo",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "monorepo|apps/web|services/api|Orbit Ops",
+      "weight": 2
+    },
+    {
+      "id": "preservation_reported",
+      "type": "transcript_contains",
+      "pattern": "monorepo|apps/web|services/api|preserve",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 2,
+      "blocking": true,
+      "metric": "rule_violation"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

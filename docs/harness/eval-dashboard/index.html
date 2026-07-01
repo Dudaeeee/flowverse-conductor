@@ -1,0 +1,1422 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>하네스 평가 대시보드</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --surface: #ffffff;
+      --surface-2: #f9fafb;
+      --ink: #17212b;
+      --muted: #667382;
+      --line: #d9e0e7;
+      --line-strong: #b9c4cf;
+      --blue: #2563eb;
+      --teal: #0f766e;
+      --green: #0f8a4b;
+      --amber: #b7791f;
+      --red: #c2413b;
+      --violet: #6d5bd0;
+      --shadow: 0 18px 42px rgba(23, 33, 43, 0.08);
+      --radius: 8px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 280px),
+        var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      letter-spacing: 0;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .shell {
+      width: min(1480px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 42px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 8px;
+      align-items: center;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 38px;
+      height: 5px;
+      background: linear-gradient(
+        90deg,
+        var(--teal) 0 31%,
+        transparent 31% 38%,
+        var(--blue) 38% 65%,
+        transparent 65% 72%,
+        var(--amber) 72% 100%
+      );
+      border-radius: 999px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 780px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-auto-flow: column;
+      gap: 10px;
+      align-items: end;
+      justify-content: end;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+    }
+
+    .control label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    select,
+    .link-button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 8px 34px 8px 11px;
+      box-shadow: 0 1px 0 rgba(23, 33, 43, 0.04);
+    }
+
+    .link-button {
+      display: inline-grid;
+      place-items: center;
+      padding: 8px 13px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .insight-panel {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.82fr) repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .verdict {
+      display: grid;
+      align-content: space-between;
+      min-height: 190px;
+      padding: 16px;
+      border-radius: var(--radius);
+      color: #ffffff;
+      background: var(--blue);
+    }
+
+    .verdict.ok { background: var(--green); }
+    .verdict.warn { background: var(--amber); }
+    .verdict.bad { background: var(--red); }
+    .verdict.info { background: var(--blue); }
+
+    .verdict-kicker {
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      opacity: 0.82;
+    }
+
+    .verdict-title {
+      margin: 8px 0 0;
+      font-size: clamp(28px, 3.6vw, 44px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .verdict-copy {
+      margin: 12px 0 0;
+      font-size: 14px;
+      line-height: 1.55;
+      opacity: 0.92;
+    }
+
+    .insight-column {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      padding: 2px 2px 0;
+    }
+
+    .insight-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .insight-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .insight-list li {
+      position: relative;
+      min-height: 42px;
+      padding: 10px 10px 10px 30px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      color: #394654;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .insight-list li::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      top: 16px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .insight-list.good li::before { background: var(--green); }
+    .insight-list.bad li::before { background: var(--red); }
+    .insight-list.next li::before { background: var(--amber); }
+
+    .metric-card,
+    .panel,
+    .run-row,
+    .empty {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .metric-card {
+      min-height: 132px;
+      padding: 16px;
+      display: grid;
+      gap: 8px;
+      align-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: var(--line-strong);
+    }
+
+    .metric-card.ok::before { background: var(--green); }
+    .metric-card.warn::before { background: var(--amber); }
+    .metric-card.bad::before { background: var(--red); }
+    .metric-card.info::before { background: var(--blue); }
+
+    .metric-label,
+    .panel-title,
+    .table-head {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      font-size: clamp(28px, 4.3vw, 44px);
+      font-weight: 850;
+      line-height: 0.98;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .metric-detail {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      min-height: 19px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(360px, 0.72fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .panel-title strong {
+      color: var(--ink);
+      font-size: 18px;
+      text-transform: none;
+    }
+
+    .panel-meta {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .chart {
+      width: 100%;
+      height: 280px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px),
+        var(--surface-2);
+      background-size: 100% 25%, 12.5% 100%;
+      overflow: hidden;
+    }
+
+    .chart svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart .axis {
+      stroke: rgba(102, 115, 130, 0.45);
+      stroke-width: 1;
+    }
+
+    .chart .line {
+      fill: none;
+      stroke: var(--blue);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chart .fill {
+      fill: rgba(37, 99, 235, 0.12);
+    }
+
+    .chart .dot {
+      fill: var(--surface);
+      stroke: var(--blue);
+      stroke-width: 3;
+    }
+
+    .chart .bad-dot {
+      fill: var(--red);
+      stroke: var(--surface);
+      stroke-width: 2;
+    }
+
+    .matrix {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .matrix-row {
+      display: grid;
+      grid-template-columns: minmax(130px, 0.42fr) minmax(0, 1fr) 66px;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .bar-track {
+      height: 10px;
+      background: #e8edf2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      min-width: 2px;
+      background: var(--blue);
+      border-radius: 999px;
+    }
+
+    .bar.good { background: var(--green); }
+    .bar.warn { background: var(--amber); }
+    .bar.bad { background: var(--red); }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .gate-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .gate-row,
+    .failure-row {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+    }
+
+    .gate-main,
+    .failure-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .gate-row code,
+    .failure-row code,
+    .run-table code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #394654;
+    }
+
+    .chip {
+      display: inline-grid;
+      min-width: 68px;
+      place-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .chip.ok {
+      background: rgba(15, 138, 75, 0.12);
+      color: var(--green);
+    }
+
+    .chip.bad {
+      background: rgba(194, 65, 59, 0.12);
+      color: var(--red);
+    }
+
+    .chip.warn {
+      background: rgba(183, 121, 31, 0.14);
+      color: var(--amber);
+    }
+
+    .chip.neutral {
+      background: #e8edf2;
+      color: var(--muted);
+    }
+
+    .quiet {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .run-table {
+      margin-top: 16px;
+      overflow: hidden;
+    }
+
+    .table-head,
+    .run-row {
+      display: grid;
+      grid-template-columns: minmax(126px, 0.86fr) minmax(118px, 0.62fr) 92px 96px 108px 86px minmax(120px, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .table-head {
+      padding: 0 14px 8px;
+    }
+
+    .run-row {
+      box-shadow: none;
+      margin-bottom: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+
+    .run-row a {
+      color: var(--blue);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .run-row a:hover {
+      text-decoration: underline;
+    }
+
+    .run-date {
+      display: grid;
+      gap: 2px;
+    }
+
+    .run-date strong {
+      font-size: 13px;
+    }
+
+    .run-date span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      display: grid;
+      gap: 10px;
+    }
+
+    .empty strong {
+      color: var(--ink);
+      font-size: 18px;
+    }
+
+    .status-strip > .empty {
+      grid-column: 1 / -1;
+    }
+
+    .chart .empty {
+      height: 100%;
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+      align-content: center;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .topbar,
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        justify-content: stretch;
+        grid-auto-flow: row;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .insight-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .verdict {
+        min-height: 150px;
+      }
+
+      .status-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .table-head {
+        display: none;
+      }
+
+      .run-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100vw - 20px, 1480px);
+        padding-top: 16px;
+      }
+
+      .toolbar,
+      .status-strip,
+      .run-row {
+        grid-template-columns: 1fr;
+      }
+
+      .insight-panel {
+        padding: 12px;
+      }
+
+      .metric-card {
+        min-height: 112px;
+      }
+
+      .chart {
+        height: 220px;
+      }
+
+      .matrix-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar" aria-labelledby="page-title">
+      <div class="brand">
+        <div class="eyebrow">Flowverse Conductor</div>
+        <h1 id="page-title">하네스 평가 대시보드</h1>
+        <p class="subtitle" id="run-context">주간 하네스 평가 이력을 불러오는 중입니다.</p>
+      </div>
+      <div class="toolbar" aria-label="대시보드 필터">
+        <div class="control">
+          <label for="provider-filter">실행 도구</label>
+          <select id="provider-filter"></select>
+        </div>
+        <div class="control">
+          <label for="suite-filter">스위트</label>
+          <select id="suite-filter"></select>
+        </div>
+        <div class="control">
+          <label for="metric-filter">추이 지표</label>
+          <select id="metric-filter">
+            <option value="pass_at_1">pass@1</option>
+            <option value="regression_pass_rate">회귀 검사 통과</option>
+            <option value="verification_evidence_rate">검증 근거</option>
+            <option value="reviewer_bug_catch_rate">리뷰 결함 포착</option>
+            <option value="seconds_per_attempt">시도당 시간</option>
+            <option value="cost_usd_per_attempt">시도당 비용</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="status-strip" id="status-strip" aria-label="최신 지표"></section>
+
+    <section class="insight-panel" id="insight-panel" aria-label="평가 해석"></section>
+
+    <section class="main-grid">
+      <div class="stack">
+        <section class="panel" aria-labelledby="trend-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span>추이</span>
+              <strong id="trend-title">지표 이력</strong>
+            </div>
+            <div class="panel-meta" id="trend-meta"></div>
+          </div>
+          <div class="chart" id="trend-chart" role="img" aria-label="선택한 지표의 추이 차트"></div>
+          <div class="matrix" id="category-matrix"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="runs-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span>이력</span>
+              <strong id="runs-title">주간 실행</strong>
+            </div>
+            <div class="panel-meta" id="runs-meta"></div>
+          </div>
+          <div class="run-table">
+            <div class="table-head">
+              <div>실행</div>
+              <div>소스</div>
+              <div>게이트</div>
+              <div>pass@1</div>
+              <div>회귀</div>
+              <div>실패</div>
+              <div>동작</div>
+            </div>
+            <div id="run-list"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="stack">
+        <section class="panel" aria-labelledby="gate-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span>릴리스 게이트</span>
+              <strong id="gate-title">최신 게이트 검사</strong>
+            </div>
+          </div>
+          <div class="gate-grid" id="gate-grid"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="failure-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span>실패 표면</span>
+              <strong id="failure-title">최신 회귀</strong>
+            </div>
+          </div>
+          <div class="gate-grid" id="failure-list"></div>
+        </section>
+      </aside>
+    </section>
+
+    <p class="footer" id="dashboard-footer"></p>
+  </main>
+
+  <script>
+    const metricDefs = {
+      pass_at_1: { label: "pass@1", kind: "percent", better: "higher" },
+      regression_pass_rate: { label: "회귀 검사 통과", kind: "percent", better: "higher" },
+      verification_evidence_rate: { label: "검증 근거", kind: "percent", better: "higher" },
+      reviewer_bug_catch_rate: { label: "리뷰 결함 포착", kind: "percent", better: "higher" },
+      doctor_pass_rate: { label: "하네스 점검 통과", kind: "percent", better: "higher" },
+      rule_violation_count: { label: "규칙 위반", kind: "count", better: "lower" },
+      blocking_failure_count: { label: "차단 실패", kind: "count", better: "lower" },
+      seconds_per_attempt: { label: "시도당 시간", kind: "duration", better: "lower" },
+      cost_usd_per_attempt: { label: "시도당 비용", kind: "cost", better: "lower" },
+      tokens_per_attempt: { label: "시도당 토큰", kind: "number", better: "lower" }
+    };
+
+    const statusLabels = {
+      passed: "통과",
+      failed: "실패",
+      skipped: "건너뜀",
+      unknown: "알 수 없음"
+    };
+
+    const categoryLabels = {
+      fresh_bootstrap: "새 저장소 부트스트랩",
+      existing_codebase_migration: "기존 코드베이스 마이그레이션",
+      skill_sync: "스킬 동기화",
+      review_quality: "리뷰 품질",
+      verification_quality: "검증 품질",
+      safety_adherence: "안전 규칙 준수"
+    };
+
+    const chipLabels = {
+      gate: "게이트",
+      task: "태스크",
+      attempt: "시도"
+    };
+
+    const els = {
+      context: document.getElementById("run-context"),
+      provider: document.getElementById("provider-filter"),
+      suite: document.getElementById("suite-filter"),
+      metric: document.getElementById("metric-filter"),
+      cards: document.getElementById("status-strip"),
+      insight: document.getElementById("insight-panel"),
+      chart: document.getElementById("trend-chart"),
+      trendTitle: document.getElementById("trend-title"),
+      trendMeta: document.getElementById("trend-meta"),
+      matrix: document.getElementById("category-matrix"),
+      gate: document.getElementById("gate-grid"),
+      failures: document.getElementById("failure-list"),
+      runs: document.getElementById("run-list"),
+      runsMeta: document.getElementById("runs-meta"),
+      footer: document.getElementById("dashboard-footer")
+    };
+
+    const state = {
+      raw: null,
+      runs: [],
+      filtered: []
+    };
+
+    function asRuns(raw) {
+      if (Array.isArray(raw)) return raw.filter(Boolean);
+      if (raw && Array.isArray(raw.runs)) return raw.runs.filter(Boolean);
+      return [];
+    }
+
+    function providerOf(run) {
+      return run?.dashboard?.provider || run?.run?.provider || "unknown";
+    }
+
+    function suiteOf(run) {
+      if (run?.dashboard?.suite_name) return run.dashboard.suite_name;
+      const dir = String(run?.run_dir || "");
+      const parts = dir.split("/").filter(Boolean);
+      return parts.length >= 4 ? parts[3] : "unknown";
+    }
+
+    function startedAt(run) {
+      return run?.run?.started_at || run?.generated_at || "";
+    }
+
+    function sortedRuns(runs) {
+      return [...runs].sort((a, b) => String(startedAt(a)).localeCompare(String(startedAt(b))));
+    }
+
+    function metricValue(run, key) {
+      const metrics = run?.metrics || {};
+      const cost = run?.cost_time || {};
+      if (metrics[key] !== undefined && metrics[key] !== null) return Number(metrics[key]);
+      if (cost[key] !== undefined && cost[key] !== null) return Number(cost[key]);
+      return null;
+    }
+
+    function formatValue(value, key) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+      const def = metricDefs[key] || {};
+      const number = Number(value);
+      if (def.kind === "percent") return `${Math.round(number * 100)}%`;
+      if (def.kind === "cost") return `$${number.toFixed(number < 1 ? 3 : 2)}`;
+      if (def.kind === "duration") {
+        if (number >= 3600) return `${(number / 3600).toFixed(1)}h`;
+        if (number >= 60) return `${Math.round(number / 60)}m`;
+        return `${Math.round(number)}s`;
+      }
+      if (Math.abs(number) >= 1000) return number.toLocaleString();
+      return Number.isInteger(number) ? String(number) : number.toFixed(2);
+    }
+
+    function shortDate(raw) {
+      if (!raw) return "알 수 없음";
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return String(raw).slice(0, 10);
+      return new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(date);
+    }
+
+    function longDate(raw) {
+      if (!raw) return "알 수 없음";
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return String(raw);
+      return new Intl.DateTimeFormat("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).format(date);
+    }
+
+    function statusClassForGate(passed) {
+      if (passed === true) return "ok";
+      if (passed === false) return "bad";
+      return "neutral";
+    }
+
+    function riskClass(value, key) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "info";
+      const number = Number(value);
+      if (key === "rule_violation_count" || key === "blocking_failure_count") {
+        return number === 0 ? "ok" : "bad";
+      }
+      if ((metricDefs[key] || {}).better === "lower") {
+        return number === 0 ? "ok" : number > 1 ? "warn" : "info";
+      }
+      if (number >= 0.9) return "ok";
+      if (number >= 0.8) return "warn";
+      return "bad";
+    }
+
+    function taskValues(run) {
+      const tasks = run?.tasks || {};
+      return Array.isArray(tasks) ? tasks : Object.values(tasks);
+    }
+
+    function latestRun() {
+      return state.filtered[state.filtered.length - 1] || null;
+    }
+
+    function displayOption(value) {
+      if (value === "all") return "전체";
+      if (value === "unknown") return "알 수 없음";
+      return value;
+    }
+
+    function displayStatus(value) {
+      return statusLabels[value] || value || "알 수 없음";
+    }
+
+    function displayCategory(value) {
+      return categoryLabels[value] || value || "알 수 없음";
+    }
+
+    function displayReason(value) {
+      const reasons = {
+        "minimum score not met": "최소 점수 기준 미달",
+        "failed checks": "검사 실패",
+        "attempt failed": "시도 실패",
+        "missing artifact": "산출물 누락",
+        "missing attempt artifact": "시도 산출물 누락"
+      };
+      return reasons[value] || value || "검사 실패";
+    }
+
+    function gateResults(run) {
+      return run?.release_gate?.results || [];
+    }
+
+    function failedGateResults(run) {
+      const failures = run?.failures?.release_gate_failures;
+      if (Array.isArray(failures) && failures.length) return failures;
+      return gateResults(run).filter(item => item.status === "failed");
+    }
+
+    function failedTaskCount(run) {
+      return taskValues(run).filter(task => task?.pass_at_1 === false).length;
+    }
+
+    function taskCount(run) {
+      return Number(run?.metrics?.task_count ?? taskValues(run).length ?? 0);
+    }
+
+    function addInsight(list, text, limit = 4) {
+      if (!text || list.includes(text) || list.length >= limit) return;
+      list.push(text);
+    }
+
+    function gateResultByKey(run, key) {
+      return gateResults(run).find(item => item.summary_key === key || item.id === key);
+    }
+
+    function gateTargetText(run, key) {
+      const item = gateResultByKey(run, key);
+      if (!item) return "";
+      return `기준 ${item.operator || ""} ${formatValue(item.threshold, item.summary_key)}`.trim();
+    }
+
+    function buildInsight(run) {
+      if (!run) {
+        return {
+          tone: "info",
+          verdict: "대기",
+          headline: "아직 해석할 평가 결과가 없습니다.",
+          strengths: ["주간 eval이 실행되면 안전성, 성공률, 리뷰 품질을 자동으로 해석합니다."],
+          weaknesses: ["현재는 dashboard history가 비어 있습니다."],
+          next: ["weekly workflow를 실행하거나 run artifact로 dashboard history를 생성하세요."]
+        };
+      }
+
+      const metrics = run.metrics || {};
+      const gatePassed = run.release_gate?.passed;
+      const passAt1 = metricValue(run, "pass_at_1");
+      const regressionPass = metricValue(run, "regression_pass_rate");
+      const reviewCatch = metricValue(run, "reviewer_bug_catch_rate");
+      const verificationEvidence = metricValue(run, "verification_evidence_rate");
+      const doctorPass = metricValue(run, "doctor_pass_rate");
+      const blocking = Number(metrics.blocking_failure_count || 0);
+      const rule = Number(metrics.rule_violation_count || 0);
+      const failures = failedTaskCount(run);
+      const count = taskCount(run);
+      const gateFailures = failedGateResults(run);
+      const strengths = [];
+      const weaknesses = [];
+      const next = [];
+
+      let tone = "info";
+      let verdict = "판정 대기";
+      let headline = "평가 결과를 더 모아야 합니다.";
+
+      if (blocking > 0 || rule > 0) {
+        tone = "bad";
+        verdict = "즉시 차단";
+        headline = "안전성 또는 필수 보존 규칙을 위반했습니다. 하네스 업데이트 후보로 쓰면 안 됩니다.";
+      } else if (gatePassed === false) {
+        tone = "bad";
+        verdict = "개선 필요";
+        headline = "릴리스 게이트를 통과하지 못했습니다. 실행은 되었지만 품질 기준에 못 미친 지표가 있습니다.";
+      } else if (run.regressions?.has_regressions) {
+        tone = "warn";
+        verdict = "주의";
+        headline = "게이트는 통과했지만 이전 baseline 대비 회귀 신호가 있습니다.";
+      } else if (gatePassed === true) {
+        tone = "ok";
+        verdict = "양호";
+        headline = "현재 scoring contract 기준으로 하네스 후보가 통과했습니다.";
+      }
+
+      if (count > 0 && count < 5) {
+        addInsight(weaknesses, `이번 실행은 태스크 ${count}개짜리 가벼운 확인 실행입니다. 전체 하네스 성능으로 일반화하기에는 표본이 작습니다.`);
+      }
+
+      if (rule === 0) addInsight(strengths, "규칙 위반이 없습니다. 파괴적 명령이나 비밀값 기록 같은 안전 규칙은 지켜졌습니다.");
+      if (blocking === 0) addInsight(strengths, "차단 실패가 없습니다. 필수 산출물이나 차단 검사는 깨지지 않았습니다.");
+      if (regressionPass !== null && regressionPass >= 0.9) {
+        addInsight(strengths, `고정 채점 검사 통과율이 ${formatValue(regressionPass, "regression_pass_rate")}로 안정적입니다.`);
+      }
+      if (passAt1 !== null && passAt1 >= 0.8) {
+        addInsight(strengths, `첫 시도 성공률이 ${formatValue(passAt1, "pass_at_1")}로 기준을 넘었습니다.`);
+      }
+      if (reviewCatch !== null && reviewCatch >= 0.8) {
+        addInsight(strengths, `리뷰 결함 포착률이 ${formatValue(reviewCatch, "reviewer_bug_catch_rate")}로 기준을 넘었습니다.`);
+      }
+
+      if (rule > 0) {
+        addInsight(weaknesses, `규칙 위반 ${rule}개가 있습니다. 안전성 문제라 다른 점수가 좋아도 release blocker입니다.`);
+        addInsight(next, "rule violation이 난 task의 transcript에서 위험 명령, secret write, 사용자 변경 보존 실패를 먼저 확인하세요.");
+      }
+      if (blocking > 0) {
+        addInsight(weaknesses, `차단 실패 ${blocking}개가 있습니다. 필수 결과물이 없거나 blocking check가 깨졌습니다.`);
+        addInsight(next, "blocking failure가 난 task의 artifact contract와 workspace 산출물을 먼저 확인하세요.");
+      }
+      if (passAt1 !== null && passAt1 < 0.8) {
+        addInsight(weaknesses, `첫 시도 성공률이 ${formatValue(passAt1, "pass_at_1")}입니다. ${gateTargetText(run, "pass_at_1") || "기준 80% 이상"}에 못 미칩니다.`);
+        addInsight(next, "실패 task의 review.md, transcript.md, final.md를 열어 agent가 무엇을 놓쳤는지 확인하세요.");
+      }
+      if (reviewCatch !== null && reviewCatch < 0.8) {
+        addInsight(weaknesses, `리뷰 결함 포착률이 ${formatValue(reviewCatch, "reviewer_bug_catch_rate")}입니다. 심어둔 결함을 충분히 잡지 못했습니다.`);
+        addInsight(next, "리뷰 스킬의 finding 작성 규칙과 예상 결함 패턴을 보강한 뒤 같은 리뷰 태스크를 재실행하세요.");
+      }
+      if (verificationEvidence !== null && verificationEvidence < 0.9) {
+        addInsight(weaknesses, `검증 근거 기록률이 ${formatValue(verificationEvidence, "verification_evidence_rate")}입니다. 명령과 결과 증거가 부족합니다.`);
+        addInsight(next, "verification skill과 final report 규칙에 실행 명령, 결과, skip 사유를 더 강하게 요구하세요.");
+      }
+      if (doctorPass !== null && doctorPass < 0.9) {
+        addInsight(weaknesses, `하네스 점검 통과율이 ${formatValue(doctorPass, "doctor_pass_rate")}입니다. 생성된 workspace 구조가 안정적이지 않습니다.`);
+        addInsight(next, "doctor 실패 task에서 mirror drift, 누락 파일, placeholder warning을 분리해 수정하세요.");
+      }
+      if (failures > 0) {
+        addInsight(weaknesses, `pass@1 실패 태스크가 ${failures}개 있습니다. category별 실패 표면을 먼저 좁혀야 합니다.`);
+      }
+
+      gateFailures
+        .filter(item => !["pass_at_1", "reviewer_bug_catch_rate", "verification_evidence_rate", "doctor_pass_rate"].includes(item.summary_key))
+        .forEach(item => {
+          addInsight(weaknesses, `${metricDefs[item.summary_key]?.label || item.id} 게이트가 실패했습니다: 현재 ${formatValue(item.value, item.summary_key)}, 기준 ${item.operator || ""} ${formatValue(item.threshold, item.summary_key)}.`);
+        });
+
+      if (!strengths.length) {
+        addInsight(strengths, "아직 강점으로 볼 수 있는 통과 지표가 충분하지 않습니다.");
+      }
+      if (!weaknesses.length) {
+        addInsight(weaknesses, "현재 gate 기준의 명확한 부족 신호는 없습니다.");
+      }
+      if (!next.length) {
+        addInsight(next, "같은 suite를 3회 이상 반복 실행해 flakiness와 비용/시간 추이를 확인하세요.");
+      }
+
+      return { tone, verdict, headline, strengths, weaknesses, next };
+    }
+
+    function renderInsight(run) {
+      const insight = buildInsight(run);
+      els.insight.innerHTML = `
+        <section class="verdict ${insight.tone}">
+          <div>
+            <div class="verdict-kicker">자동 판정</div>
+            <div class="verdict-title">${escapeHtml(insight.verdict)}</div>
+            <p class="verdict-copy">${escapeHtml(insight.headline)}</p>
+          </div>
+          <div class="verdict-kicker">최신 실행 기준</div>
+        </section>
+        ${renderInsightColumn("좋은 점", insight.strengths, "good")}
+        ${renderInsightColumn("부족한 점", insight.weaknesses, "bad")}
+        ${renderInsightColumn("다음 액션", insight.next, "next")}
+      `;
+    }
+
+    function renderInsightColumn(title, items, tone) {
+      return `
+        <section class="insight-column">
+          <div class="insight-title">${escapeHtml(title)}</div>
+          <ul class="insight-list ${tone}">
+            ${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+          </ul>
+        </section>
+      `;
+    }
+
+    function setOptions(select, values, current) {
+      const next = current && values.includes(current) ? current : values[0] || "all";
+      select.innerHTML = values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(displayOption(value))}</option>`).join("");
+      select.value = next;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function empty(message, detail = "") {
+      return `<div class="empty"><strong>${escapeHtml(message)}</strong>${detail ? `<span>${escapeHtml(detail)}</span>` : ""}</div>`;
+    }
+
+    function renderControls() {
+      const providers = ["all", ...new Set(state.runs.map(providerOf))];
+      setOptions(els.provider, providers, els.provider.value);
+
+      const provider = els.provider.value;
+      const suiteBase = provider === "all" ? state.runs : state.runs.filter(run => providerOf(run) === provider);
+      const suites = ["all", ...new Set(suiteBase.map(suiteOf))];
+      setOptions(els.suite, suites, els.suite.value);
+    }
+
+    function applyFilters() {
+      const provider = els.provider.value || "all";
+      const suite = els.suite.value || "all";
+      state.filtered = sortedRuns(state.runs).filter(run => {
+        return (provider === "all" || providerOf(run) === provider)
+          && (suite === "all" || suiteOf(run) === suite);
+      });
+      render();
+    }
+
+    function renderCards(run) {
+      if (!run) {
+        els.cards.innerHTML = [
+          empty("대시보드 데이터가 없습니다", "워크플로가 평가 이력을 publish하면 주간 요약이 여기에 표시됩니다.")
+        ].join("");
+        return;
+      }
+
+      const failures = taskValues(run).filter(task => task?.pass_at_1 === false).length;
+      const cards = [
+        {
+          label: "릴리스 게이트",
+          value: run.release_gate?.passed === true ? "통과" : run.release_gate?.passed === false ? "실패" : "알 수 없음",
+          detail: `실패한 게이트 지표 ${run.release_gate?.failed_metric_ids?.length || 0}개`,
+          tone: statusClassForGate(run.release_gate?.passed)
+        },
+        {
+          label: "pass@1",
+          value: formatValue(metricValue(run, "pass_at_1"), "pass_at_1"),
+          detail: `태스크 ${run.metrics?.task_count || taskValues(run).length || 0}개`,
+          tone: riskClass(metricValue(run, "pass_at_1"), "pass_at_1")
+        },
+        {
+          label: "회귀 검사 통과",
+          value: formatValue(metricValue(run, "regression_pass_rate"), "regression_pass_rate"),
+          detail: run.regressions?.has_regressions ? "회귀가 감지됨" : "회귀 플래그 없음",
+          tone: run.regressions?.has_regressions ? "bad" : riskClass(metricValue(run, "regression_pass_rate"), "regression_pass_rate")
+        },
+        {
+          label: "실패 표면",
+          value: String(failures),
+          detail: `차단 실패 ${run.metrics?.blocking_failure_count || 0}개, 규칙 위반 ${run.metrics?.rule_violation_count || 0}개`,
+          tone: failures > 0 ? "bad" : "ok"
+        }
+      ];
+
+      els.cards.innerHTML = cards.map(card => `
+        <article class="metric-card ${card.tone}">
+          <div class="metric-label">${escapeHtml(card.label)}</div>
+          <div class="metric-value">${escapeHtml(card.value)}</div>
+          <div class="metric-detail">${escapeHtml(card.detail)}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderChart(runs, key) {
+      const def = metricDefs[key] || { label: key, kind: "number" };
+      els.trendTitle.textContent = def.label;
+      els.trendMeta.textContent = `실행 ${runs.length}개`;
+
+      const points = runs
+        .map((run, index) => ({ index, run, value: metricValue(run, key) }))
+        .filter(point => point.value !== null && !Number.isNaN(point.value));
+
+      if (!points.length) {
+        els.chart.innerHTML = empty("지표 값이 없습니다", "선택한 이력에서 이 지표가 아직 수집되지 않았습니다.");
+        return;
+      }
+
+      const width = 920;
+      const height = 280;
+      const pad = 28;
+      const values = points.map(point => point.value);
+      let min = Math.min(...values);
+      let max = Math.max(...values);
+      if (def.kind === "percent") {
+        min = Math.min(0, min);
+        max = Math.max(1, max);
+      }
+      if (min === max) {
+        min = min - 1;
+        max = max + 1;
+      }
+      const x = point => pad + (point.index / Math.max(1, runs.length - 1)) * (width - pad * 2);
+      const y = value => height - pad - ((value - min) / (max - min)) * (height - pad * 2);
+      const path = points.map(point => `${x(point).toFixed(1)},${y(point.value).toFixed(1)}`).join(" ");
+      const area = `${pad},${height - pad} ${path} ${width - pad},${height - pad}`;
+      const last = points[points.length - 1];
+
+      els.chart.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+          <line class="axis" x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}"></line>
+          <line class="axis" x1="${pad}" y1="${pad}" x2="${pad}" y2="${height - pad}"></line>
+          <polygon class="fill" points="${area}"></polygon>
+          <polyline class="line" points="${path}"></polyline>
+          ${points.map(point => `<circle class="${point.run?.release_gate?.passed === false ? "bad-dot" : "dot"}" cx="${x(point).toFixed(1)}" cy="${y(point.value).toFixed(1)}" r="5"></circle>`).join("")}
+          <text x="${width - pad}" y="${pad + 2}" text-anchor="end" fill="#667382" font-size="13" font-weight="800">${escapeHtml(formatValue(max, key))}</text>
+          <text x="${width - pad}" y="${height - pad - 8}" text-anchor="end" fill="#667382" font-size="13" font-weight="800">${escapeHtml(formatValue(min, key))}</text>
+          <text x="${Math.max(pad + 80, x(last) - 8)}" y="${Math.max(pad + 18, y(last.value) - 14)}" text-anchor="end" fill="#17212b" font-size="14" font-weight="850">${escapeHtml(formatValue(last.value, key))}</text>
+        </svg>
+      `;
+    }
+
+    function renderCategoryMatrix(run) {
+      const categories = run?.categories || {};
+      const rows = Object.entries(categories).map(([name, value]) => ({
+        name,
+        rate: Number(value?.pass_at_1_rate ?? 0),
+        failures: Number(value?.failure_count ?? 0)
+      }));
+
+      if (!rows.length) {
+        els.matrix.innerHTML = "";
+        return;
+      }
+
+      els.matrix.innerHTML = rows.map(row => {
+        const tone = row.failures > 0 || row.rate < 0.8 ? "bad" : row.rate < 0.9 ? "warn" : "good";
+        return `
+          <div class="matrix-row">
+            <code>${escapeHtml(displayCategory(row.name))}</code>
+            <div class="bar-track"><div class="bar ${tone}" style="width: ${Math.max(2, Math.min(100, row.rate * 100))}%"></div></div>
+            <strong>${escapeHtml(formatValue(row.rate, "pass_at_1"))}</strong>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderGate(run) {
+      const results = run?.release_gate?.results || [];
+      if (!run || !results.length) {
+        els.gate.innerHTML = empty("게이트 결과가 없습니다", "채점된 eval run 이후 릴리스 게이트 검사 결과가 표시됩니다.");
+        return;
+      }
+
+      els.gate.innerHTML = results.map(item => {
+        const status = item.status || "unknown";
+        const tone = status === "passed" ? "ok" : status === "failed" ? "bad" : "neutral";
+        const target = `${item.operator || ""} ${formatValue(item.threshold, item.summary_key)}`.trim();
+        return `
+          <div class="gate-row">
+            <div class="gate-main">
+              <code>${escapeHtml(item.id || item.summary_key || "게이트")}</code>
+              <span class="chip ${tone}">${escapeHtml(displayStatus(status))}</span>
+            </div>
+            <div class="quiet">현재값 ${escapeHtml(formatValue(item.value, item.summary_key))} / 기준 ${escapeHtml(target)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderFailures(run) {
+      if (!run) {
+        els.failures.innerHTML = empty("선택된 실행이 없습니다");
+        return;
+      }
+
+      const failedAttempts = run.failures?.failed_attempts || [];
+      const gateFailures = run.failures?.release_gate_failures || [];
+      const regressions = run.regressions || {};
+      const rows = [];
+
+      gateFailures.slice(0, 5).forEach(item => {
+        rows.push({
+          title: item.id || item.summary_key || "게이트",
+          chip: "gate",
+          detail: `현재값 ${formatValue(item.value, item.summary_key)} / 기준 ${item.operator || ""} ${formatValue(item.threshold, item.summary_key)}`
+        });
+      });
+
+      (regressions.tasks || []).slice(0, 5).forEach(item => {
+        rows.push({
+          title: item.task_id,
+          chip: "task",
+          detail: `${displayCategory(item.category)}에서 pass@1 회귀`
+        });
+      });
+
+      failedAttempts.slice(0, 5).forEach(item => {
+        rows.push({
+          title: `${item.task_id}/${item.attempt || "시도"}`,
+          chip: "attempt",
+          detail: displayReason(item.reason)
+        });
+      });
+
+      if (!rows.length) {
+        els.failures.innerHTML = empty("최근 실패가 없습니다", "선택한 최신 실행에는 실패한 게이트, 회귀, 시도 항목이 없습니다.");
+        return;
+      }
+
+      els.failures.innerHTML = rows.map(row => `
+        <div class="failure-row">
+          <div class="failure-main">
+            <code>${escapeHtml(row.title)}</code>
+            <span class="chip warn">${escapeHtml(chipLabels[row.chip] || row.chip)}</span>
+          </div>
+          <div class="quiet">${escapeHtml(row.detail)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderRuns(runs) {
+      els.runsMeta.textContent = `${runs.length}개 표시 중`;
+      if (!runs.length) {
+        els.runs.innerHTML = empty("조건에 맞는 실행이 없습니다", "실행 도구 또는 스위트 필터를 바꿔보세요.");
+        return;
+      }
+
+      els.runs.innerHTML = [...runs].reverse().map(run => {
+        const failedTasks = taskValues(run).filter(task => task?.pass_at_1 === false).length;
+        const gateTone = statusClassForGate(run.release_gate?.passed);
+        const gateText = run.release_gate?.passed === true ? "통과" : run.release_gate?.passed === false ? "실패" : "알 수 없음";
+        const regressionTone = run.regressions?.has_regressions ? "bad" : "ok";
+        const regressionText = run.regressions?.has_regressions ? "있음" : "없음";
+        const source = run.run?.source_commit ? String(run.run.source_commit).slice(0, 10) : "알 수 없음";
+        const runUrl = run.dashboard?.github_run_url;
+        return `
+          <article class="run-row">
+            <div class="run-date">
+              <strong>${escapeHtml(shortDate(startedAt(run)))}</strong>
+              <span>${escapeHtml(longDate(startedAt(run)))}</span>
+            </div>
+            <code>${escapeHtml(source)}</code>
+            <span class="chip ${gateTone}">${escapeHtml(gateText)}</span>
+            <strong>${escapeHtml(formatValue(metricValue(run, "pass_at_1"), "pass_at_1"))}</strong>
+            <span class="chip ${regressionTone}">${escapeHtml(regressionText)}</span>
+            <strong>${escapeHtml(String(failedTasks))}</strong>
+            <div>${runUrl ? `<a href="${escapeHtml(runUrl)}">워크플로 실행 열기</a>` : `<span class="quiet">실행 링크 없음</span>`}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function render() {
+      const run = latestRun();
+      const metricKey = els.metric.value || "pass_at_1";
+      const provider = els.provider.value || "all";
+      const suite = els.suite.value || "all";
+
+      els.context.textContent = run
+        ? `${displayOption(provider)} / ${displayOption(suite)} - 최신 실행 ${longDate(startedAt(run))}`
+        : "아직 publish된 주간 하네스 평가 이력이 없습니다.";
+
+      renderCards(run);
+      renderInsight(run);
+      renderChart(state.filtered, metricKey);
+      renderCategoryMatrix(run);
+      renderGate(run);
+      renderFailures(run);
+      renderRuns(state.filtered);
+
+      const generated = state.raw?.generated_at ? `${longDate(state.raw.generated_at)} 생성.` : "";
+      els.footer.textContent = `${generated} 집계 요약만 표시합니다. 자세한 작업 기록은 워크플로 산출물에 보관됩니다.`;
+    }
+
+    async function loadHistory() {
+      try {
+        const response = await fetch("history.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        state.raw = await response.json();
+      } catch (error) {
+        state.raw = { runs: [] };
+        els.context.textContent = `대시보드 이력을 불러오지 못했습니다: ${error.message}`;
+      }
+
+      state.runs = sortedRuns(asRuns(state.raw));
+      renderControls();
+      applyFilters();
+    }
+
+    els.provider.addEventListener("change", () => {
+      renderControls();
+      applyFilters();
+    });
+    els.suite.addEventListener("change", applyFilters);
+    els.metric.addEventListener("change", render);
+
+    loadHistory();
+  </script>
+</body>
+</html>

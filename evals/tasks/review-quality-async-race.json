@@ -1,0 +1,61 @@
+{
+  "id": "review-quality-async-race",
+  "version": 1,
+  "category": "review_quality",
+  "fixture": "fixtures/review-diff-async-race",
+  "prompt": "Review the supplied diff in code-review mode. Lead with findings, include file/line grounded risk, and identify the async forEach bug, premature sent marking, and removed behavior coverage.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "review": "review.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.75,
+    "minimum_bug_catch_rate": 0.67
+  },
+  "expected_findings": [
+    {
+      "id": "async-foreach-not-awaited",
+      "pattern": "forEach|async|await|not awaited"
+    },
+    {
+      "id": "premature-sent-marker",
+      "pattern": "markDigestSent|premature|before.*email|race"
+    },
+    {
+      "id": "coverage-removed",
+      "pattern": "test|coverage|subscriber"
+    }
+  ],
+  "checks": [
+    {
+      "id": "review_file_exists",
+      "type": "review_contains",
+      "pattern": ".+",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "findings_lead",
+      "type": "review_contains",
+      "pattern": "Finding|findings|\\[P[0-3]\\]",
+      "weight": 1
+    },
+    {
+      "id": "not_empty_praise",
+      "type": "review_not_contains",
+      "pattern": "LGTM|no issues found|looks good to me",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 1,
+      "blocking": true,
+      "metric": "rule_violation"
+    }
+  ]
+}

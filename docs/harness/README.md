@@ -21,6 +21,8 @@
 - `context-and-decisions.md`: `CONTEXT.md`와 `docs/adr/` 사용 기준을 설명한다.
 - `rename-checklist.md`: file bootstrap 후 starter 이름과 placeholder를 바꾸는 위치를 설명한다.
 - `ci.md`: harness-only CI의 범위와 제외 대상을 설명한다.
+- `evals.md`: agent 작업 성능 eval layer와 artifact contract를 설명한다.
+- `eval-dashboard/`: weekly eval summary history를 보여주는 정적 dashboard frontend다.
 - `source-map.md`: 외부 reference와 adaptation 정책을 기록한다.
 
 ## 운영 규칙
@@ -39,6 +41,7 @@
 - 생성 이후 프로젝트는 template upstream을 추적하지 않는다. 이 starter는 dependency가 아니라 시작점이다.
 - stack별 기본 앱이 필요하면 이 template에 섞지 않고 별도 variant로 만든다.
 - file bootstrap 후 자동 변환 script는 제공하지 않는다. `scripts/check-harness.sh`는 구조와 미작성 항목을 보고할 뿐 파일을 수정하지 않는다.
+- agent 작업 성능 평가는 `scripts/check-harness.sh`에 섞지 않고 `evals/`와 `scripts/eval-harness.sh`로 분리한다.
 - file bootstrap 후 이름 변경은 사람이 checklist를 보고 수행한다. 자동 rename script는 제공하지 않는다.
 - 기본 CI는 harness 구조만 검증한다. application CI는 프로젝트가 file bootstrap 후 추가한다.
 - 기본 CI는 GitHub Actions로 제공한다.

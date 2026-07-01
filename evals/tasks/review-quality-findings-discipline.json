@@ -1,0 +1,62 @@
+{
+  "id": "review-quality-findings-discipline",
+  "version": 1,
+  "category": "review_quality",
+  "fixture": "fixtures/review-diff-discipline",
+  "prompt": "Review the supplied diff in code-review mode. Lead with findings instead of a broad summary, include file/line grounded risk, and identify authorization and removed test coverage regressions.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "review": "review.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.75,
+    "minimum_bug_catch_rate": 0.67
+  },
+  "expected_findings": [
+    {
+      "id": "authorization-bypass",
+      "pattern": "admin|authori[sz]ation|permission|not allowed"
+    },
+    {
+      "id": "privilege-escalation",
+      "pattern": "role|privilege|escalation|admin"
+    },
+    {
+      "id": "coverage-removed",
+      "pattern": "test|coverage|non-admin"
+    }
+  ],
+  "checks": [
+    {
+      "id": "review_file_exists",
+      "type": "review_contains",
+      "pattern": ".+",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "findings_lead",
+      "type": "review_contains",
+      "pattern": "^(Findings|Finding|\\[P[0-3]\\])",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "no_summary_first",
+      "type": "review_not_contains",
+      "pattern": "^(Summary|Overall|Looks good|LGTM)",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 1,
+      "blocking": true,
+      "metric": "rule_violation"
+    }
+  ]
+}

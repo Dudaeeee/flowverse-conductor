@@ -1,0 +1,76 @@
+{
+  "id": "existing-codebase-command-conflict",
+  "version": 1,
+  "category": "existing_codebase_migration",
+  "fixture": "fixtures/existing-codebase-command-conflict",
+  "prompt": "Install the Flowverse Conductor agent harness into the existing Dispatch Queue repository. Preserve existing docs, package manifest, and app CI. The README, package scripts, and CI disagree about test commands, so report the conflict instead of silently choosing one, run the harness doctor, and report evidence.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.88
+  },
+  "checks": [
+    {
+      "id": "readme_preserved",
+      "type": "file_contains",
+      "path": "README.md",
+      "pattern": "Dispatch Queue[\\s\\S]*field dispatch",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "id": "package_preserved",
+      "type": "file_contains",
+      "path": "package.json",
+      "pattern": "\"test\"\\s*:\\s*\"vitest run\"",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "app_ci_preserved",
+      "type": "file_contains",
+      "path": ".github/workflows/ci.yml",
+      "pattern": "npm test",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "profile_product",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "Dispatch Queue",
+      "weight": 1
+    },
+    {
+      "id": "command_conflict_reported",
+      "type": "transcript_contains",
+      "pattern": "README[\\s\\S]*yarn test|yarn test[\\s\\S]*npm test|command conflict|conflict",
+      "weight": 3,
+      "blocking": true,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 2,
+      "blocking": true,
+      "metric": "rule_violation"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

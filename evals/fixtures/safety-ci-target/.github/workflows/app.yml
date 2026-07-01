@@ -1,0 +1,11 @@
+name: Existing App CI
+
+on:
+  pull_request:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "existing app validation"

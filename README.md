@@ -61,7 +61,14 @@ Codex는 `.agents/skills/`를 repo-scoped skills로 읽습니다. Claude Code에
 - `scripts/sync-agent-skills.sh`: skill과 agent 원본을 Codex와 Claude 위치로 동기화합니다.
 - `scripts/render-agent-mirrors.py`: `harness/agents/`를 Codex TOML과 Claude Markdown mirror로 변환합니다.
 - `scripts/check-harness.sh`: file bootstrap 후 harness 구조와 미작성 항목을 점검하는 doctor script입니다.
+- `evals/`: agent 작업 성능을 평가하는 repo-local task suite, fixture, deterministic grader입니다.
+- `scripts/eval-harness.sh`: eval task schema와 agent run artifact를 채점하는 wrapper입니다.
+- `scripts/run-harness-eval.py`: Codex 또는 Claude Code를 호출해 eval run artifact를 생성하는 runner입니다.
+- `scripts/report-harness-eval.py`: eval run artifact를 weekly summary/report/regression으로 변환하는 reporter입니다.
+- `scripts/update-eval-dashboard.py`: weekly summary history를 누적하고 정적 eval dashboard site를 생성합니다.
+- `docs/harness/eval-dashboard/`: weekly eval dashboard의 정적 frontend입니다.
 - `.github/workflows/harness.yml`: harness 구조만 검증하는 최소 CI입니다.
+- `.github/workflows/harness-weekly.yml`: provider를 실제 호출하는 scheduled/manual weekly eval workflow입니다.
 
 이 template은 agent harness만 담는 빈 프로젝트 기반입니다. application framework, product code, runtime-specific starter app은 포함하지 않습니다.
 Codex repo skill mirror, Codex plugin adapter, Codex custom agent mirror, Claude Code skill mirror, Claude Code agent mirror는 실제 파일로 포함합니다. 그래서 file bootstrap 직후 각 도구가 harness를 바로 읽을 수 있습니다.
@@ -89,6 +96,33 @@ First-class adapter는 Codex와 Claude Code만 지원합니다. 다른 도구는
 - GitHub hosting을 전제로 합니다. GitHub Actions workflow는 harness template의 기본 검증 표면입니다.
 - Codex plugin package name `company-agent-harness`는 기본적으로 유지합니다. 이 이름은 프로젝트 제품명이 아니라 사내 harness adapter를 가리킵니다.
 - 지원 adapter 범위는 Codex와 Claude Code로 제한합니다. 다른 agent tool 전용 파일은 실제 필요가 생길 때 별도 결정으로 추가합니다.
+
+## Agent Harness Eval
+
+`./scripts/check-harness.sh`는 구조 doctor이고, agent 작업 성능 평가는 별도 eval layer에서 다룹니다. `evals/tasks/*.json`은 fresh bootstrap, existing-codebase migration, skill sync, review quality, verification quality, safety adherence seed task를 선언합니다. 실제 agent 실행 결과는 run artifact로 저장한 뒤 아래처럼 채점합니다.
+
+```bash
+./scripts/eval-harness.sh --check-suite
+./scripts/run-harness-eval.py --provider codex --attempts 1
+./scripts/eval-harness.sh --run-dir path/to/run-dir
+python3 scripts/report-harness-eval.py --run-dir path/to/run-dir
+python3 scripts/update-eval-dashboard.py \
+  --summary path/to/run-dir/weekly-summary.json \
+  --history .harness-weekly-history/codex/public-weekly/dashboard-history.json \
+  --site-out .harness-eval-dashboard-site \
+  --provider codex \
+  --suite-name public-weekly
+python3 evals/graders/check_golden_runs.py
+python3 evals/graders/check_scoring_contract.py
+python3 evals/graders/check_weekly_report.py
+python3 evals/graders/check_eval_dashboard.py
+```
+
+`scripts/run-harness-eval.py`는 Codex 또는 Claude Code를 호출해 `runs/YYYY-MM-DD/<provider>/<suite>/` 아래 artifact를 생성합니다. 자세한 runner 설계와 artifact contract는 `docs/harness/evals.md`와 `evals/README.md`를 보세요.
+
+Weekly workflow는 매 run마다 dashboard site artifact도 생성합니다. GitHub Pages로 바로 배포하려면 repository variable `HARNESS_EVAL_DASHBOARD_ENABLED=true`를 설정하고 Pages source를 GitHub Actions로 둡니다.
+
+주간 자동 실행을 켜려면 repository variable `HARNESS_WEEKLY_EVAL_ENABLED=true`가 필요합니다. Codex provider를 GitHub-hosted runner에서 실행할 때는 repository secret `OPENAI_API_KEY`도 설정합니다. Workflow는 `openai/codex-action@v1`로 Codex CLI와 API proxy를 준비한 뒤 runner를 호출합니다.
 
 ## 참고
 

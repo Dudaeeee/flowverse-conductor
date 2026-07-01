@@ -1,0 +1,61 @@
+{
+  "id": "review-quality-data-loss",
+  "version": 1,
+  "category": "review_quality",
+  "fixture": "fixtures/review-diff-data-loss",
+  "prompt": "Review the supplied diff in code-review mode. Lead with findings, include file/line grounded risk, and identify data loss, audit, and missing restore coverage regressions.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "review": "review.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.75,
+    "minimum_bug_catch_rate": 0.67
+  },
+  "expected_findings": [
+    {
+      "id": "data-loss-delete",
+      "pattern": "delete|data loss|permanent|archive"
+    },
+    {
+      "id": "audit-log-removed",
+      "pattern": "audit|log"
+    },
+    {
+      "id": "restore-coverage-removed",
+      "pattern": "restore|test|coverage"
+    }
+  ],
+  "checks": [
+    {
+      "id": "review_file_exists",
+      "type": "review_contains",
+      "pattern": ".+",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "findings_lead",
+      "type": "review_contains",
+      "pattern": "Finding|findings|\\[P[0-3]\\]",
+      "weight": 1
+    },
+    {
+      "id": "not_empty_praise",
+      "type": "review_not_contains",
+      "pattern": "LGTM|no issues found|looks good to me",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 1,
+      "blocking": true,
+      "metric": "rule_violation"
+    }
+  ]
+}

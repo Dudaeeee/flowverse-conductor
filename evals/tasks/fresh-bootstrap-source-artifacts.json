@@ -1,0 +1,93 @@
+{
+  "id": "fresh-bootstrap-source-artifacts",
+  "version": 1,
+  "category": "fresh_bootstrap",
+  "fixture": "fixtures/fresh-target-source-artifacts",
+  "prompt": "Install the Flowverse Conductor agent harness into the fresh Beacon Board repository. Use the product brief as the source of project facts, do not copy source checkout local-only artifacts, record unknown stack choices as not chosen yet, run the harness doctor, and report evidence.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.9
+  },
+  "checks": [
+    {
+      "id": "agents_exists",
+      "type": "file_exists",
+      "path": "AGENTS.md",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "profile_product_fact",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "Beacon Board",
+      "weight": 2
+    },
+    {
+      "id": "unknowns_not_invented",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "not chosen yet|not decided yet|unknown",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "source_git_not_copied",
+      "type": "file_not_exists",
+      "path": ".git",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "ds_store_not_copied",
+      "type": "file_not_exists",
+      "path": ".DS_Store",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "node_modules_not_copied",
+      "type": "file_not_exists",
+      "path": "node_modules",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "local_claude_file_not_copied",
+      "type": "file_not_exists",
+      "path": "CLAUDE.local.md",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "local_settings_not_copied",
+      "type": "file_not_exists",
+      "path": ".claude/settings.local.json",
+      "weight": 1,
+      "blocking": true
+    },
+    {
+      "id": "artifact_exclusion_reported",
+      "type": "transcript_contains",
+      "pattern": "local-only|\\.git|node_modules|artifact",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

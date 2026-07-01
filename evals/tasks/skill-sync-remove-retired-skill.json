@@ -1,0 +1,63 @@
+{
+  "id": "skill-sync-remove-retired-skill",
+  "version": 1,
+  "category": "skill_sync",
+  "prompt": "Remove the retired test-driven-development skill from the canonical harness skill source and every Codex, Claude, and plugin mirror. Use the repository sync script so mirrors remain current, run the harness doctor, and report evidence.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.9
+  },
+  "checks": [
+    {
+      "id": "source_skill_removed",
+      "type": "file_not_exists",
+      "path": "harness/skills/test-driven-development/SKILL.md",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "id": "codex_repo_mirror_removed",
+      "type": "file_not_exists",
+      "path": ".agents/skills/test-driven-development/SKILL.md",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "claude_mirror_removed",
+      "type": "file_not_exists",
+      "path": ".claude/skills/test-driven-development/SKILL.md",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "plugin_mirror_removed",
+      "type": "file_not_exists",
+      "path": "plugins/company-agent-harness/skills/test-driven-development/SKILL.md",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "sync_command_ran",
+      "type": "transcript_contains",
+      "pattern": "\\./scripts/sync-agent-skills\\.sh|scripts/sync-agent-skills\\.sh",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

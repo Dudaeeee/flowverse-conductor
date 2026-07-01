@@ -1,0 +1,251 @@
+name: Harness Weekly Eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Agent provider to run.
+        required: true
+        default: codex
+        type: choice
+        options:
+          - codex
+          - claude
+      suite_name:
+        description: Logical suite name used in artifact paths.
+        required: true
+        default: public-weekly
+        type: string
+      tasks_dir:
+        description: Task JSON directory.
+        required: true
+        default: evals/tasks
+        type: string
+      attempts:
+        description: Attempts per task.
+        required: true
+        default: "1"
+        type: string
+      timeout_seconds:
+        description: Timeout per attempt.
+        required: true
+        default: "1800"
+        type: string
+      model:
+        description: Optional provider model.
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: Generate artifacts without calling the provider CLI.
+        required: true
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 18 * * 0"
+
+permissions:
+  actions: write
+  contents: read
+  id-token: write
+  pages: write
+
+concurrency:
+  group: harness-weekly-eval-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    name: Weekly harness eval
+    if: github.event_name == 'workflow_dispatch' || vars.HARNESS_WEEKLY_EVAL_ENABLED == 'true'
+    runs-on: ${{ vars.HARNESS_EVAL_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 360
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve settings
+        id: settings
+        shell: bash
+        run: |
+          provider="${{ github.event.inputs.provider || 'codex' }}"
+          suite_name="${{ github.event.inputs.suite_name || 'public-weekly' }}"
+          tasks_dir="${{ github.event.inputs.tasks_dir || 'evals/tasks' }}"
+          attempts="${{ github.event.inputs.attempts || '1' }}"
+          timeout_seconds="${{ github.event.inputs.timeout_seconds || '1800' }}"
+          model="${{ github.event.inputs.model || '' }}"
+          dry_run="${{ github.event.inputs.dry_run || 'false' }}"
+          run_date="$(date -u +%F)"
+          run_dir="runs/${run_date}/${provider}/${suite_name}"
+          history_path=".harness-weekly-history/${provider}/${suite_name}"
+          dashboard_site_dir="${run_dir}/dashboard-site"
+          cache_key="harness-weekly-${provider}-${suite_name}-${{ github.run_id }}-${{ github.run_attempt }}"
+
+          {
+            echo "provider=${provider}"
+            echo "suite_name=${suite_name}"
+            echo "tasks_dir=${tasks_dir}"
+            echo "attempts=${attempts}"
+            echo "timeout_seconds=${timeout_seconds}"
+            echo "model=${model}"
+            echo "dry_run=${dry_run}"
+            echo "run_dir=${run_dir}"
+            echo "history_path=${history_path}"
+            echo "dashboard_site_dir=${dashboard_site_dir}"
+            echo "cache_key=${cache_key}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Restore previous weekly summary
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ steps.settings.outputs.history_path }}
+          key: ${{ steps.settings.outputs.cache_key }}
+          restore-keys: |
+            harness-weekly-${{ steps.settings.outputs.provider }}-${{ steps.settings.outputs.suite_name }}-
+
+      - name: Set up Codex CLI
+        if: steps.settings.outputs.provider == 'codex' && steps.settings.outputs.dry_run != 'true'
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          allow-bots: true
+
+      - name: Provider preflight
+        shell: bash
+        run: |
+          provider="${{ steps.settings.outputs.provider }}"
+          if command -v "$provider" >/dev/null 2>&1; then
+            "$provider" --version || true
+          else
+            echo "warning: provider CLI not found: ${provider}"
+          fi
+
+      - name: Run harness eval
+        id: run-eval
+        shell: bash
+        run: |
+          set +e
+          cmd=(
+            ./scripts/run-harness-eval.py
+            --provider "${{ steps.settings.outputs.provider }}"
+            --tasks-dir "${{ steps.settings.outputs.tasks_dir }}"
+            --suite-name "${{ steps.settings.outputs.suite_name }}"
+            --attempts "${{ steps.settings.outputs.attempts }}"
+            --timeout-seconds "${{ steps.settings.outputs.timeout_seconds }}"
+            --run-dir "${{ steps.settings.outputs.run_dir }}"
+            --overwrite
+          )
+          if [ -n "${{ steps.settings.outputs.model }}" ]; then
+            cmd+=(--model "${{ steps.settings.outputs.model }}")
+          fi
+          if [ "${{ steps.settings.outputs.dry_run }}" = "true" ]; then
+            cmd+=(--dry-run)
+          fi
+
+          mkdir -p "${{ steps.settings.outputs.run_dir }}"
+          "${cmd[@]}"
+          exit_code=$?
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Generate weekly report
+        id: report
+        shell: bash
+        run: |
+          previous="${{ steps.settings.outputs.history_path }}/weekly-summary.json"
+          args=()
+          if [ -f "$previous" ]; then
+            args+=(--previous-summary "$previous")
+          fi
+          python3 scripts/report-harness-eval.py \
+            --run-dir "${{ steps.settings.outputs.run_dir }}" \
+            "${args[@]}"
+
+      - name: Generate eval dashboard
+        id: dashboard
+        if: always() && steps.report.outcome == 'success'
+        shell: bash
+        run: |
+          artifact_name="harness-weekly-${{ steps.settings.outputs.provider }}-${{ steps.settings.outputs.suite_name }}-${{ github.run_id }}"
+          python3 scripts/update-eval-dashboard.py \
+            --summary "${{ steps.settings.outputs.run_dir }}/weekly-summary.json" \
+            --history "${{ steps.settings.outputs.history_path }}/dashboard-history.json" \
+            --site-out "${{ steps.settings.outputs.dashboard_site_dir }}" \
+            --provider "${{ steps.settings.outputs.provider }}" \
+            --suite-name "${{ steps.settings.outputs.suite_name }}" \
+            --artifact-name "$artifact_name"
+
+      - name: Prepare weekly history cache
+        if: always() && steps.report.outcome == 'success'
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.settings.outputs.history_path }}"
+          cp "${{ steps.settings.outputs.run_dir }}/weekly-summary.json" "${{ steps.settings.outputs.history_path }}/weekly-summary.json"
+          cp "${{ steps.settings.outputs.run_dir }}/weekly-report.md" "${{ steps.settings.outputs.history_path }}/weekly-report.md"
+
+      - name: Save weekly history cache
+        if: always() && steps.report.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.settings.outputs.history_path }}
+          key: ${{ steps.settings.outputs.cache_key }}
+
+      - name: Upload weekly artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-weekly-${{ steps.settings.outputs.provider }}-${{ steps.settings.outputs.suite_name }}-${{ github.run_id }}
+          path: ${{ steps.settings.outputs.run_dir }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload dashboard site artifact
+        if: always() && steps.dashboard.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-eval-dashboard-${{ steps.settings.outputs.provider }}-${{ steps.settings.outputs.suite_name }}-${{ github.run_id }}
+          path: ${{ steps.settings.outputs.dashboard_site_dir }}
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Configure GitHub Pages
+        if: always() && steps.dashboard.outcome == 'success' && vars.HARNESS_EVAL_DASHBOARD_ENABLED == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: always() && steps.dashboard.outcome == 'success' && vars.HARNESS_EVAL_DASHBOARD_ENABLED == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.settings.outputs.dashboard_site_dir }}
+
+      - name: Deploy GitHub Pages dashboard
+        if: always() && steps.dashboard.outcome == 'success' && vars.HARNESS_EVAL_DASHBOARD_ENABLED == 'true'
+        uses: actions/deploy-pages@v4
+
+      - name: Check weekly result
+        if: always() && steps.report.outcome == 'success'
+        shell: bash
+        run: |
+          python3 - "${{ steps.settings.outputs.run_dir }}/weekly-summary.json" "${{ steps.run-eval.outputs.exit_code || '1' }}" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          summary = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          runner_exit = int(sys.argv[2])
+          failures = []
+          if runner_exit != 0:
+              failures.append(f"runner exit code {runner_exit}")
+          if summary.get("release_gate", {}).get("passed") is not True:
+              failures.append("release gate did not pass")
+          if failures:
+              for failure in failures:
+                  print(f"error: {failure}", file=sys.stderr)
+              raise SystemExit(1)
+          PY
+
+      - name: Check report generation
+        if: always() && steps.report.outcome != 'success'
+        shell: bash
+        run: exit 1

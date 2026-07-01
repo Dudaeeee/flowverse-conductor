@@ -1,0 +1,55 @@
+{
+  "id": "verification-quality-basic",
+  "version": 1,
+  "category": "verification_quality",
+  "prompt": "Make a small documentation-only harness change, then verify it with the closest checks available. The final report must name each command, its result, and any warning or skipped validation.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.85
+  },
+  "checks": [
+    {
+      "id": "doctor_command_named",
+      "type": "transcript_contains",
+      "pattern": "\\./scripts/check-harness\\.sh|scripts/check-harness\\.sh",
+      "weight": 2,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "syntax_check_named",
+      "type": "transcript_contains",
+      "pattern": "bash -n|py_compile|python3 -m py_compile",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "result_reported",
+      "type": "transcript_contains",
+      "pattern": "passed|ok:|exit 0|0 error",
+      "weight": 2,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "skips_explained",
+      "type": "transcript_not_contains",
+      "pattern": "not run without explanation|skipped without explanation|could not run without explanation",
+      "weight": 1
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

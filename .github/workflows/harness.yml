@@ -18,9 +18,38 @@ jobs:
         shell: bash
         run: |
           bash -n scripts/check-harness.sh
+          bash -n scripts/eval-harness.sh
           bash -n scripts/sync-agent-skills.sh
           python3 -m py_compile scripts/render-agent-mirrors.py
+          python3 -m py_compile scripts/run-harness-eval.py
+          python3 -m py_compile scripts/report-harness-eval.py
+          python3 -m py_compile scripts/update-eval-dashboard.py
+          python3 -m py_compile evals/graders/harness_eval.py
+          python3 -m py_compile evals/graders/check_golden_runs.py
+          python3 -m py_compile evals/graders/check_scoring_contract.py
+          python3 -m py_compile evals/graders/check_weekly_report.py
+          python3 -m py_compile evals/graders/check_eval_dashboard.py
 
       - name: Check harness structure
         shell: bash
         run: ./scripts/check-harness.sh
+
+      - name: Check eval suite
+        shell: bash
+        run: ./scripts/eval-harness.sh --check-suite
+
+      - name: Check eval golden runs
+        shell: bash
+        run: python3 evals/graders/check_golden_runs.py
+
+      - name: Check eval scoring contract
+        shell: bash
+        run: python3 evals/graders/check_scoring_contract.py
+
+      - name: Check eval weekly report
+        shell: bash
+        run: python3 evals/graders/check_weekly_report.py
+
+      - name: Check eval dashboard
+        shell: bash
+        run: python3 evals/graders/check_eval_dashboard.py

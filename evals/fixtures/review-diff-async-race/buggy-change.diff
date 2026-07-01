@@ -1,0 +1,12 @@
+diff --git a/src/sendDigest.ts b/src/sendDigest.ts
+@@
+-  for (const subscriber of subscribers) {
+-    await sendEmail(subscriber.email, digest);
+-  }
++  subscribers.forEach(async (subscriber) => {
++    await sendEmail(subscriber.email, digest);
++  });
++  await markDigestSent(digest.id);
+diff --git a/src/sendDigest.test.ts b/src/sendDigest.test.ts
+@@
+-  await expect(sendDigest(digest)).resolves.toEqual({ sent: subscribers.length });

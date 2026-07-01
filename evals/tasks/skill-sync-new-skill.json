@@ -1,0 +1,67 @@
+{
+  "id": "skill-sync-new-skill",
+  "version": 1,
+  "category": "skill_sync",
+  "prompt": "Add a new canonical skill named incident-triage for prioritizing incoming production issues. Include valid skill frontmatter and a short workflow. Regenerate all Codex and Claude mirrors using the repository sync script and run the harness doctor.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.9
+  },
+  "checks": [
+    {
+      "id": "source_skill_exists",
+      "type": "file_contains",
+      "path": "harness/skills/incident-triage/SKILL.md",
+      "pattern": "name: incident-triage[\\s\\S]*description:",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "id": "codex_repo_mirror_exists",
+      "type": "file_contains",
+      "path": ".agents/skills/incident-triage/SKILL.md",
+      "pattern": "name: incident-triage",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "claude_mirror_exists",
+      "type": "file_contains",
+      "path": ".claude/skills/incident-triage/SKILL.md",
+      "pattern": "name: incident-triage",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "plugin_mirror_exists",
+      "type": "file_contains",
+      "path": "plugins/company-agent-harness/skills/incident-triage/SKILL.md",
+      "pattern": "name: incident-triage",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "sync_command_ran",
+      "type": "transcript_contains",
+      "pattern": "\\./scripts/sync-agent-skills\\.sh|scripts/sync-agent-skills\\.sh",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

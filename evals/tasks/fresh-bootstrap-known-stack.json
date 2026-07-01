@@ -1,0 +1,86 @@
+{
+  "id": "fresh-bootstrap-known-stack",
+  "version": 1,
+  "category": "fresh_bootstrap",
+  "fixture": "fixtures/fresh-target-known-stack",
+  "prompt": "Install the Flowverse Conductor agent harness into the fresh Ledger Loop repository. Use the fixture brief as the source of confirmed project facts, record the known TypeScript/Node/npm/SQLite stack and known npm commands, leave only genuinely unknown fields as unknown, run the harness doctor, and report evidence.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.9
+  },
+  "checks": [
+    {
+      "id": "agents_exists",
+      "type": "file_exists",
+      "path": "AGENTS.md",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "profile_product_fact",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "Ledger Loop",
+      "weight": 2
+    },
+    {
+      "id": "profile_stack_facts",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "TypeScript[\\s\\S]*Node\\.js[\\s\\S]*npm[\\s\\S]*SQLite|SQLite[\\s\\S]*npm[\\s\\S]*Node\\.js[\\s\\S]*TypeScript",
+      "weight": 3
+    },
+    {
+      "id": "profile_commands",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "npm install[\\s\\S]*npm test[\\s\\S]*npm run build",
+      "weight": 2
+    },
+    {
+      "id": "profile_has_no_blank_fields",
+      "type": "file_not_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "^- [^:]+:\\s*$",
+      "weight": 1
+    },
+    {
+      "id": "source_git_not_copied",
+      "type": "file_not_exists",
+      "path": ".git",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "doctor_command_ran",
+      "type": "transcript_contains",
+      "pattern": "\\./scripts/check-harness\\.sh|scripts/check-harness\\.sh",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 2,
+      "blocking": true,
+      "metric": "rule_violation"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "skill-sync-basic",
+  "version": 1,
+  "category": "skill_sync",
+  "prompt": "Update the canonical verification skill with the sentence 'Evidence must name the exact command and result.' Then regenerate all Codex and Claude mirrors using the repository sync script and run the harness doctor.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.9
+  },
+  "checks": [
+    {
+      "id": "source_skill_updated",
+      "type": "file_contains",
+      "path": "harness/skills/verification/SKILL.md",
+      "pattern": "Evidence must name the exact command and result\\.",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "id": "codex_repo_mirror_updated",
+      "type": "file_contains",
+      "path": ".agents/skills/verification/SKILL.md",
+      "pattern": "Evidence must name the exact command and result\\.",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "claude_mirror_updated",
+      "type": "file_contains",
+      "path": ".claude/skills/verification/SKILL.md",
+      "pattern": "Evidence must name the exact command and result\\.",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "plugin_mirror_updated",
+      "type": "file_contains",
+      "path": "plugins/company-agent-harness/skills/verification/SKILL.md",
+      "pattern": "Evidence must name the exact command and result\\.",
+      "weight": 2,
+      "blocking": true
+    },
+    {
+      "id": "sync_command_ran",
+      "type": "transcript_contains",
+      "pattern": "\\./scripts/sync-agent-skills\\.sh|scripts/sync-agent-skills\\.sh",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+diff --git a/src/archiveProject.ts b/src/archiveProject.ts
+@@
+-  await db.project.update({ id, archivedAt: now });
+-  await audit.log("project.archived", { id, actorId });
++  await db.project.delete({ id });
++  return { archived: true };
+diff --git a/src/archiveProject.test.ts b/src/archiveProject.test.ts
+@@
+-  it("keeps archived project data available for restore", async () => {
+-    await archiveProject(project.id, actor.id);
+-    await expect(restoreProject(project.id)).resolves.toMatchObject({ id: project.id });
+-  });

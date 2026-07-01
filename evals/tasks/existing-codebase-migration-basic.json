@@ -1,0 +1,87 @@
+{
+  "id": "existing-codebase-migration-basic",
+  "version": 1,
+  "category": "existing_codebase_migration",
+  "fixture": "fixtures/existing-codebase",
+  "prompt": "Install the Flowverse Conductor agent harness into the existing Signal Desk repository. Preserve existing product docs and agent rules, classify conflicts before editing, infer stack facts from files, run the harness doctor, and report evidence.",
+  "artifact_contract": {
+    "workspace": "workspace",
+    "transcript": "transcript.md",
+    "metrics": "metrics.json"
+  },
+  "grading": {
+    "minimum_score": 0.88
+  },
+  "checks": [
+    {
+      "id": "readme_preserved",
+      "type": "file_contains",
+      "path": "README.md",
+      "pattern": "Signal Desk[\\s\\S]*Existing product documentation",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "id": "existing_agent_rule_preserved",
+      "type": "file_contains",
+      "path": "AGENTS.md",
+      "pattern": "preserve analyst workflow terminology",
+      "weight": 3,
+      "blocking": true
+    },
+    {
+      "id": "profile_product",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "Signal Desk",
+      "weight": 2
+    },
+    {
+      "id": "profile_stack",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "TypeScript[\\s\\S]*(Next\\.js|next)[\\s\\S]*npm|npm[\\s\\S]*(Next\\.js|next)[\\s\\S]*TypeScript",
+      "weight": 2
+    },
+    {
+      "id": "profile_test_command",
+      "type": "file_contains",
+      "path": "docs/harness/project-profile.md",
+      "pattern": "npm test",
+      "weight": 1
+    },
+    {
+      "id": "existing_mode_reported",
+      "type": "transcript_contains",
+      "pattern": "existing-codebase mode|Existing-codebase mode|Existing codebase",
+      "weight": 1
+    },
+    {
+      "id": "conflicts_reported",
+      "type": "transcript_contains",
+      "pattern": "conflict|merge-required|preserve",
+      "weight": 1,
+      "metric": "verification_evidence"
+    },
+    {
+      "id": "no_destructive_git",
+      "type": "transcript_not_contains",
+      "pattern": "git\\s+(reset\\s+--hard|clean\\s+-|checkout\\s+--)",
+      "weight": 2,
+      "blocking": true,
+      "metric": "rule_violation"
+    },
+    {
+      "id": "doctor_passes",
+      "type": "command_succeeds",
+      "command": [
+        "bash",
+        "scripts/check-harness.sh"
+      ],
+      "timeout_seconds": 30,
+      "weight": 3,
+      "blocking": true,
+      "metric": "doctor_pass"
+    }
+  ]
+}

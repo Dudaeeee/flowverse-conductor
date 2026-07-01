@@ -1,0 +1,10 @@
+diff --git a/src/updateRole.ts b/src/updateRole.ts
+@@
+-  if (!actor.isAdmin) throw new Error("not allowed");
+-  return users.updateRole(targetUserId, role);
++  return users.updateRole(targetUserId, role);
+diff --git a/src/updateRole.test.ts b/src/updateRole.test.ts
+@@
+-  it("rejects non-admin role changes", async () => {
+-    await expect(updateRole(nonAdmin, user.id, "admin")).rejects.toThrow("not allowed");
+-  });

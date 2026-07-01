@@ -48,9 +48,15 @@ require_file "CLAUDE.md"
 require_file "CONTEXT.md"
 require_file "README.md"
 require_file ".github/workflows/harness.yml"
+require_file ".github/workflows/harness-weekly.yml"
 require_file "docs/harness/project-profile.md"
 require_file "scripts/sync-agent-skills.sh"
 require_file "scripts/render-agent-mirrors.py"
+require_file "scripts/run-harness-eval.py"
+require_file "scripts/report-harness-eval.py"
+require_file "scripts/update-eval-dashboard.py"
+require_file "docs/harness/eval-dashboard/index.html"
+require_file "docs/harness/eval-dashboard/history.json"
 require_dir "docs/adr"
 require_dir "harness/skills"
 require_dir "harness/agents"
@@ -86,11 +92,59 @@ else
   fail "scripts/render-agent-mirrors.py is not executable"
 fi
 
+if [ -x "$ROOT/scripts/run-harness-eval.py" ]; then
+  pass "run-harness-eval.py is executable"
+else
+  fail "scripts/run-harness-eval.py is not executable"
+fi
+
+if [ -x "$ROOT/scripts/report-harness-eval.py" ]; then
+  pass "report-harness-eval.py is executable"
+else
+  fail "scripts/report-harness-eval.py is not executable"
+fi
+
+if [ -x "$ROOT/scripts/update-eval-dashboard.py" ]; then
+  pass "update-eval-dashboard.py is executable"
+else
+  fail "scripts/update-eval-dashboard.py is not executable"
+fi
+
 if command -v python3 >/dev/null 2>&1; then
   if python3 -m py_compile "$ROOT/scripts/render-agent-mirrors.py" >/dev/null 2>&1; then
     pass "render-agent-mirrors.py compiles"
   else
     fail "render-agent-mirrors.py failed py_compile"
+  fi
+
+  if python3 -m py_compile "$ROOT/scripts/run-harness-eval.py" >/dev/null 2>&1; then
+    pass "run-harness-eval.py compiles"
+  else
+    fail "run-harness-eval.py failed py_compile"
+  fi
+
+  if python3 -m py_compile "$ROOT/scripts/report-harness-eval.py" >/dev/null 2>&1; then
+    pass "report-harness-eval.py compiles"
+  else
+    fail "report-harness-eval.py failed py_compile"
+  fi
+
+  if python3 -m py_compile "$ROOT/scripts/update-eval-dashboard.py" >/dev/null 2>&1; then
+    pass "update-eval-dashboard.py compiles"
+  else
+    fail "update-eval-dashboard.py failed py_compile"
+  fi
+
+  if python3 -m py_compile "$ROOT/evals/graders/check_eval_dashboard.py" >/dev/null 2>&1; then
+    pass "check_eval_dashboard.py compiles"
+  else
+    fail "check_eval_dashboard.py failed py_compile"
+  fi
+
+  if python3 -m json.tool "$ROOT/docs/harness/eval-dashboard/history.json" >/dev/null 2>&1; then
+    pass "eval dashboard seed history JSON parses"
+  else
+    fail "invalid JSON: docs/harness/eval-dashboard/history.json"
   fi
 
   if python3 -m json.tool "$ROOT/.agents/plugins/marketplace.json" >/dev/null 2>&1; then
